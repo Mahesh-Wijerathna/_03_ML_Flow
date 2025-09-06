@@ -1,0 +1,14 @@
+aliases: []
+creation_timestamp: 1757171232005
+current_stage: Production
+description: ''
+last_updated_timestamp: 1757171232334
+name: TitanicClassifier
+run_id: 21ad93d9637a475e9f6c1033391e1c65
+run_link: ''
+source: runs:/21ad93d9637a475e9f6c1033391e1c65/model
+status: READY
+status_message: null
+storage_location: runs:/21ad93d9637a475e9f6c1033391e1c65/model
+user_id: null
+version: 1

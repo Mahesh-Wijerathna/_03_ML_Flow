@@ -1,0 +1,15 @@
+artifact_uri: file:///mlartifacts/965650242079362162/01073433c9be4f3096560adb7bf1d381/artifacts
+end_time: 1757171060533
+entry_point_name: ''
+experiment_id: '965650242079362162'
+lifecycle_stage: active
+run_id: 01073433c9be4f3096560adb7bf1d381
+run_name: nosy-fly-235
+run_uuid: 01073433c9be4f3096560adb7bf1d381
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1757171048017
+status: 3
+tags: []
+user_id: root

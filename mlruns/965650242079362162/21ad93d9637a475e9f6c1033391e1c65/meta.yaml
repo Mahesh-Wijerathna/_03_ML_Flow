@@ -1,0 +1,15 @@
+artifact_uri: file:///mlartifacts/965650242079362162/21ad93d9637a475e9f6c1033391e1c65/artifacts
+end_time: 1757171227310
+entry_point_name: ''
+experiment_id: '965650242079362162'
+lifecycle_stage: active
+run_id: 21ad93d9637a475e9f6c1033391e1c65
+run_name: awesome-shrew-557
+run_uuid: 21ad93d9637a475e9f6c1033391e1c65
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1757171220553
+status: 3
+tags: []
+user_id: root

@@ -1,0 +1,77 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '**'
+      - '!README.md'  # Ignore docs
+
+jobs:
+  check-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      model-changed: ${{ steps.filter.outputs.model }}
+      backend-changed: ${{ steps.filter.outputs.backend }}
+      frontend-changed: ${{ steps.filter.outputs.frontend }}
+    steps:
+    - uses: actions/checkout@v2
+    - uses: dorny/paths-filter@v2
+      id: filter
+      with:
+        filters: |
+          model:
+            - 'scripts/**'
+            - 'data/**'
+          backend:
+            - 'backend/**'
+          frontend:
+            - 'frontend/**'
+
+  train-and-test:
+    needs: check-changes
+    if: needs.check-changes.outputs.model-changed == 'true'
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.8'
+    - name: Install dependencies
+      run: |
+        pip install -r requirements.txt
+    - name: Set MLflow Tracking URI
+      run: |
+        export MLFLOW_TRACKING_URI=http://localhost:5000
+    - name: Start MLflow (background)
+      run: |
+        mlflow server --host 0.0.0.0 --port 5000 --backend-store-uri file:///tmp/mlruns --default-artifact-root file:///tmp/mlartifacts &
+        sleep 10
+    - name: Run training
+      run: |
+        python scripts/train.py
+    - name: Run promotion
+      run: |
+        python scripts/promote_model.py
+    - name: Test backend
+      run: |
+        python backend/app.py &
+        sleep 5
+        curl -X POST http://localhost:5001/predict -H "Content-Type: application/json" -d '{"Pclass": 3, "Sex": 0, "Age": 25, "SibSp": 0, "Parch": 0, "Fare": 7.25}'
+
+  deploy:
+    needs: [check-changes, train-and-test]
+    if: always() && (needs.check-changes.outputs.backend-changed == 'true' || needs.check-changes.outputs.frontend-changed == 'true' || needs.train-and-test.result == 'success')
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Deploy to Railway
+      run: |
+        # Install Railway CLI
+        curl -fsSL https://railway.app/install.sh | sh
+        # Login (use RAILWAY_TOKEN secret)
+        railway login --token ${{ secrets.RAILWAY_TOKEN }}
+        # Deploy
+        railway deploy --project ${{ secrets.RAILWAY_PROJECT_ID }}

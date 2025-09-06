@@ -4,11 +4,29 @@ import pandas as pd
 
 app = Flask(__name__)
 
-# Load model from MLflow registry (assume 'TitanicClassifier' is registered)
-model = mlflow.pyfunc.load_model("models:/TitanicClassifier/Production")
+# Load model from MLflow (latest run in experiment)
+experiment_name = "Titanic Survival"
+try:
+    import mlflow
+    mlflow.set_tracking_uri(os.getenv("MLFLOW_TRACKING_URI", "http://localhost:5000"))
+    experiment = mlflow.get_experiment_by_name(experiment_name)
+    if experiment:
+        runs = mlflow.search_runs(experiment_ids=[experiment.experiment_id])
+        if not runs.empty:
+            latest_run = runs.iloc[0]
+            model_uri = f"runs:/{latest_run.run_id}/model"
+            model = mlflow.pyfunc.load_model(model_uri)
+        else:
+            model = None
+    else:
+        model = None
+except:
+    model = None
 
 @app.route('/predict', methods=['POST'])
 def predict():
+    if model is None:
+        return jsonify({'error': 'Model not available'}), 500
     data = request.get_json()
     df = pd.DataFrame([data])
     prediction = model.predict(df)

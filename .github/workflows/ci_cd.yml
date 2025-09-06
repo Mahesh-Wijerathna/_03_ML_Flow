@@ -31,8 +31,20 @@ jobs:
 
   train-and-test:
     needs: check-changes
-    if: needs.check-changes.outputs.model-changed == 'true'
+    if: needs.check-changes.outputs.model-changed != 'true'
     runs-on: ubuntu-latest
+    services:
+      mlflow:
+        image: python:3.8-slim
+        ports:
+          - 5000:5000
+        env:
+          MLFLOW_TRACKING_URI: http://localhost:5000
+        options: >-
+          --health-cmd "curl --fail http://localhost:5000 || exit 1"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
     - uses: actions/checkout@v2
     - name: Set up Python
@@ -42,10 +54,8 @@ jobs:
     - name: Install dependencies
       run: |
         pip install -r requirements.txt
-    - name: Set MLflow Tracking URI
-      run: |
-        export MLFLOW_TRACKING_URI=http://localhost:5000
-    - name: Start MLflow (background)
+        pip install mlflow
+    - name: Start MLflow Server
       run: |
         mlflow server --host 0.0.0.0 --port 5000 --backend-store-uri file:///tmp/mlruns --default-artifact-root file:///tmp/mlartifacts &
         sleep 10
@@ -54,14 +64,19 @@ jobs:
         python scripts/train.py
       env:
         DATA_PATH: ./data/train.csv
+        MLFLOW_TRACKING_URI: http://localhost:5000
     - name: Run promotion
       run: |
         python scripts/promote_model.py
+      env:
+        MLFLOW_TRACKING_URI: http://localhost:5000
     - name: Test backend
       run: |
         python backend/app.py &
         sleep 5
         curl -X POST http://localhost:5001/predict -H "Content-Type: application/json" -d '{"Pclass": 3, "Sex": 0, "Age": 25, "SibSp": 0, "Parch": 0, "Fare": 7.25}' || echo "Test failed, but continuing"
+      env:
+        MLFLOW_TRACKING_URI: http://localhost:5000
 
   deploy:
     needs: [check-changes, train-and-test]

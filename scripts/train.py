@@ -11,7 +11,8 @@ mlflow_tracking_uri = os.getenv("MLFLOW_TRACKING_URI", "http://localhost:5000")
 mlflow.set_tracking_uri(mlflow_tracking_uri)
 
 # Load data (assume train.csv is in data/)
-data = pd.read_csv('/app/data/train.csv')
+data_path = os.getenv("DATA_PATH", "../data/train.csv")  # Use env var for flexibility
+data = pd.read_csv(data_path)
 
 # Simple preprocessing (adjust as needed)
 data['Sex'] = data['Sex'].map({'male': 0, 'female': 1})
